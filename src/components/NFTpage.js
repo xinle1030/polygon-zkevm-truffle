@@ -56,19 +56,25 @@ export default function NFTPage(props) {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
 
+      const { chainId } = await provider.getNetwork();
+      const MarketplaceData = MarketplaceJSON.networks[chainId];
+
       //Pull the deployed contract instance
       let contract = new ethers.Contract(
-        MarketplaceJSON.address,
+        MarketplaceData.address,
         MarketplaceJSON.abi,
         signer
       );
+
       const salePrice = ethers.utils.parseUnits(data.price, "ether");
       updateMessage("Buying the NFT... Please Wait (Up to 5 mins)");
       //run the executeSale function
+      console.log("haiz");
       let transaction = await contract.executeSale(tokenId, {
         value: salePrice,
       });
       await transaction.wait();
+      console.log("yo");
 
       alert("You successfully bought the NFT!");
       updateMessage("");
