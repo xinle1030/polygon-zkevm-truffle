@@ -3,7 +3,6 @@ import { useState } from "react";
 import { uploadFileToIPFS, uploadJSONToIPFS } from "../pinata";
 import MarketplaceJSON from "../truffle_abis/Marketplace.json";
 import { useLocation } from "react-router";
-import Web3 from "web3";
 
 export default function SellNFT() {
   const [formParams, updateFormParams] = useState({
@@ -12,7 +11,6 @@ export default function SellNFT() {
     price: "",
   });
   const [fileURL, setFileURL] = useState(null);
-  const [cid, setCid] = useState(null);
   const ethers = require("ethers");
   const [message, updateMessage] = useState("");
   const location = useLocation();
@@ -28,7 +26,6 @@ export default function SellNFT() {
         let url = response.pinataURL;
         console.log("Uploaded image to Pinata: ", url);
         setFileURL(url);
-        setCid(url.substring(url.lastIndexOf("/") + 1));
       }
     } catch (e) {
       console.log("Error during file upload", e);
@@ -45,7 +42,7 @@ export default function SellNFT() {
       name,
       description,
       price,
-      image: cid,
+      image: fileURL,
     };
 
     try {
