@@ -29915,12 +29915,12 @@
     "1422": {
       "events": {},
       "links": {},
-      "address": "0x28fc9Fc7Ecb29FbEDb955Bd3072334AB440181d5",
-      "transactionHash": "0x3b9f5a5e023bdfe26ea83cc9f5039039746e2b97bfdc609733e621af2fda9e11"
+      "address": "0xBb24EE0f032aD91fE6c0eBA7781eB44f4eB88f41",
+      "transactionHash": "0x51e8f46c73ff0b41b3a426739b3c1db0fe7521689154215f86c930d71f98a809"
     }
   },
   "schemaVersion": "3.4.11",
-  "updatedAt": "2023-02-10T08:01:51.689Z",
+  "updatedAt": "2023-02-11T10:29:09.561Z",
   "networkType": "ethereum",
   "devdoc": {
     "kind": "dev",
