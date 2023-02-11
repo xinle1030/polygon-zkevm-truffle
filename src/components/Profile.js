@@ -1,5 +1,4 @@
 import Navbar from "./Navbar";
-import { useLocation, useParams } from "react-router-dom";
 import MarketplaceJSON from "../truffle_abis/Marketplace.json";
 import axios from "axios";
 import { useState } from "react";
@@ -11,7 +10,7 @@ export default function Profile() {
   const [address, updateAddress] = useState("0x");
   const [totalPrice, updateTotalPrice] = useState("0");
 
-  async function getNFTData(tokenId) {
+  async function getNFTData() {
     const ethers = require("ethers");
     let sumPrice = 0;
     //After adding your Hardhat network to your metamask, this code will get providers and signers
@@ -68,12 +67,9 @@ export default function Profile() {
     updateTotalPrice(sumPrice.toPrecision(3));
   }
 
-  const params = useParams();
-  const tokenId = params.tokenId;
-
   if (!dataFetched) {
     setTimeout(() => {
-      getNFTData(tokenId);
+      getNFTData();
     }, 1000);
   }
 
