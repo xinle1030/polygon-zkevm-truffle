@@ -4,24 +4,19 @@ import MarketplaceJSON from "../truffle_abis/Marketplace.json";
 import axios from "axios";
 import { useState } from "react";
 import NFTTile from "./NFTTile";
-import Web3 from "web3";
 
 export default function Profile() {
   const [data, updateData] = useState([]);
+  const [dataFetched, updateFetched] = useState(false);
   const [address, updateAddress] = useState("0x");
   const [totalPrice, updateTotalPrice] = useState("0");
-
-  const [dataFetched, updateFetched] = useState(false);
 
   async function getNFTData(tokenId) {
     const ethers = require("ethers");
     let sumPrice = 0;
-
     //After adding your Hardhat network to your metamask, this code will get providers and signers
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
-    const addr = await signer.getAddress();
-
     const { chainId } = await provider.getNetwork();
     const MarketplaceData = MarketplaceJSON.networks[chainId];
 
@@ -44,21 +39,13 @@ export default function Profile() {
       transaction.map(async (i) => {
         const tokenURI = await contract.tokenURI(i.tokenId);
         console.log(tokenURI);
-
-        let meta;
-        try {
-          meta = await axios.get(tokenURI, {
-            headers: {
-              Accept: "application/json",
-              pinata_api_key: process.env.REACT_APP_PINATA_KEY,
-              pinata_secret_api_key: process.env.REACT_APP_PINATA_SECRET,
-            },
-          });
-          meta = meta.data;
-        } catch (err) {
-          console.log("error at " + tokenURI + ": " + err.message);
-          return {};
-        }
+        let meta = await axios.get(tokenURI, {
+          headers: {
+            Accept: "text/plain",
+          },
+        });
+        meta = meta.data;
+        console.log(meta);
 
         let price = ethers.utils.formatUnits(i.price.toString(), "ether");
         let item = {
@@ -66,7 +53,7 @@ export default function Profile() {
           tokenId: i.tokenId.toNumber(),
           seller: i.seller,
           owner: i.owner,
-          image: "https://gateway.pinata.cloud/ipfs/" + meta.image,
+          image: meta.image,
           name: meta.name,
           description: meta.description,
         };
@@ -77,16 +64,21 @@ export default function Profile() {
 
     updateData(items);
     updateFetched(true);
-    updateAddress(addr);
+    updateAddress(MarketplaceData.address);
     updateTotalPrice(sumPrice.toPrecision(3));
   }
 
   const params = useParams();
   const tokenId = params.tokenId;
-  if (!dataFetched) getNFTData(tokenId);
+
+  if (!dataFetched) {
+    setTimeout(() => {
+      getNFTData(tokenId);
+    }, 1000);
+  }
 
   return (
-    <div className="profileClass" style={{ "minHeight": "100vh" }}>
+    <div className="profileClass" style={{ minHeight: "100vh" }}>
       <Navbar></Navbar>
       <div className="profileClass">
         <div className="flex text-center flex-col mt-11 md:text-2xl text-white">
@@ -114,7 +106,7 @@ export default function Profile() {
               })}
           </div>
           <div className="mt-10 text-xl">
-            {data && data.length == 0
+            {data && data.length === 0
               ? "Oops, No NFT data to display (Are you logged in?)"
               : ""}
           </div>

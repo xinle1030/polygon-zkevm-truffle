@@ -3,7 +3,6 @@ import NFTTile from "./NFTTile";
 import MarketplaceJSON from "../truffle_abis/Marketplace.json";
 import axios from "axios";
 import { useState } from "react";
-import Web3 from "web3";
 
 export default function Marketplace() {
   const sampleData = [];
@@ -33,22 +32,14 @@ export default function Marketplace() {
     const items = await Promise.all(
       transaction.map(async (i) => {
         const tokenURI = await contract.tokenURI(i.tokenId);
-
-        let meta;
-        try {
-          meta = await axios.get(tokenURI, {
-            headers: {
-              "Access-Control-Allow-Origin": "*",
-              pinata_api_key: process.env.REACT_APP_PINATA_KEY,
-              pinata_secret_api_key: process.env.REACT_APP_PINATA_SECRET,
-            },
-          });
-          meta = meta.data;
-        } catch (err) {
-          console.log("error at " + tokenURI + ": " + err.message);
-          return {};
-        }
-
+        console.log(tokenURI);
+        let meta = await axios.get(tokenURI, {
+          headers: {
+            Accept: "text/plain",
+          },
+        });
+        meta = meta.data;
+        console.log(meta);
 
         let price = ethers.utils.formatUnits(i.price.toString(), "ether");
         let item = {
@@ -68,7 +59,11 @@ export default function Marketplace() {
     updateData(items);
   }
 
-  if (!dataFetched) getAllNFTs();
+  if (!dataFetched) {
+    setTimeout(() => {
+      getAllNFTs();
+    }, 1000);
+  }
 
   return (
     <div>
