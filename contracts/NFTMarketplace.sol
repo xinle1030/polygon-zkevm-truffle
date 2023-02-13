@@ -24,6 +24,13 @@ contract NFTMarketplace is ERC721URIStorage {
         address payable seller;
         uint256 price;
         bool currentlyListed;
+        uint redeemCode;
+    }
+
+    //The structure to store info about a nft owner for a nft
+    struct NFTRedeemState {
+        uint256 tokenId;
+        bool hasRedeemed;
     }
 
     //the event emitted when a token is successfully listed
@@ -35,10 +42,13 @@ contract NFTMarketplace is ERC721URIStorage {
         bool currentlyListed
     );
 
-    //This mapping maps tokenId to token info and is helpful when retrieving details about a tokenId
+    event NFTRedeemed(address user, uint256 tokenId, uint32 redeemCode);
+
+    //tokenId to NFT
     mapping(uint256 => ListedToken) private idToListedToken;
 
-    mapping (uint256 => address[]) private nftOwners;
+    //NFTOwners to NFT Redeem State
+    mapping (address => NFTRedeemState[]) public nftOwners;
 
     constructor() ERC721("NFTMarketplace", "NFTM") {
         owner = payable(msg.sender);
@@ -90,16 +100,23 @@ contract NFTMarketplace is ERC721URIStorage {
         //Just sanity check
         require(price > 0, "Make sure the price isn't negative");
 
+        /* Generate Random String Coupon code */
+        uint32 code = uint32(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, tokenId)))%2000000000);
+
         //Update the mapping of tokenId's to Token details, useful for retrieval functions
         idToListedToken[tokenId] = ListedToken(
             tokenId,
             payable(address(this)),
             payable(msg.sender),
             price,
-            true
+            true,
+            code
         );
 
-        nftOwners[tokenId].push(msg.sender);
+        nftOwners[msg.sender].push(NFTRedeemState({
+                tokenId: tokenId, 
+                hasRedeemed: true
+                }));
 
         _transfer(msg.sender, address(this), tokenId);
         //Emit the event for successful transfer. The frontend parses this message and updates the end user
@@ -120,7 +137,7 @@ contract NFTMarketplace is ERC721URIStorage {
         uint currentId;
         //at the moment currentlyListed is true for all, if it becomes false in the future we will 
         //filter out currentlyListed == false over here
-        for(uint i=0;i<nftCount;i++)
+        for(uint i = 0;i < nftCount; i++)
         {
             currentId = i + 1;
             ListedToken storage currentItem = idToListedToken[currentId];
@@ -140,7 +157,7 @@ contract NFTMarketplace is ERC721URIStorage {
         //Important to get a count of all the NFTs that belong to the user before we can make an array for them
         for(uint i=0; i < totalItemCount; i++)
         {
-            if(idToListedToken[i+1].owner == msg.sender || idToListedToken[i+1].seller == msg.sender || indexOf(nftOwners[i+1], msg.sender) != -1){
+            if(idToListedToken[i+1].owner == msg.sender || idToListedToken[i+1].seller == msg.sender || indexOf(nftOwners[msg.sender], i+1) != -1){
                 itemCount += 1;
             }
         }
@@ -148,7 +165,7 @@ contract NFTMarketplace is ERC721URIStorage {
         //Once you have the count of relevant NFTs, create an array then store all the NFTs in it
         ListedToken[] memory items = new ListedToken[](itemCount);
         for(uint i=0; i < totalItemCount; i++) {
-            if(idToListedToken[i+1].owner == msg.sender || idToListedToken[i+1].seller == msg.sender || indexOf(nftOwners[i+1], msg.sender) != -1) {
+            if(idToListedToken[i+1].owner == msg.sender || idToListedToken[i+1].seller == msg.sender || indexOf(nftOwners[msg.sender], i+1) != -1) {
                 currentId = i+1;
                 ListedToken storage currentItem = idToListedToken[currentId];
                 items[currentIndex] = currentItem;
@@ -178,19 +195,38 @@ contract NFTMarketplace is ERC721URIStorage {
         //Transfer the proceeds from the sale to the seller of the NFT
         payable(seller).transfer(msg.value);
 
-        nftOwners[tokenId].push(msg.sender);
+        nftOwners[msg.sender].push(NFTRedeemState({
+                tokenId: tokenId, 
+                hasRedeemed: false
+                }));
     }
 
-    function indexOf(address[] memory owners, address nftOwner) private pure returns (int) {
-        for (int i = 0; i < int(owners.length); i++) {
-            if (owners[uint(i)] == nftOwner) {
+    function issueNFT(uint256 tokenId, address[] memory walletAddr) public payable{
+        for (uint i = 0; i < walletAddr.length; i++){
+            nftOwners[walletAddr[i]].push(NFTRedeemState({
+                    tokenId: tokenId, 
+                    hasRedeemed: false
+                    }));
+        }
+    }
+
+    function redeemNFT(uint256 tokenId, uint32 redeemCode) public {
+        require(indexOf(nftOwners[msg.sender], tokenId) != -1 && idToListedToken[tokenId].redeemCode == redeemCode, "Invalid Redeem Code for NFT");
+        for (uint i = 0; i < nftOwners[msg.sender].length; i++){
+            if (nftOwners[msg.sender][i].tokenId == tokenId){
+                nftOwners[msg.sender][i].hasRedeemed = true;
+                emit NFTRedeemed(msg.sender, tokenId, redeemCode);
+                break;
+            }
+        }
+    }
+
+    function indexOf(NFTRedeemState[] memory nftOwned, uint256 tokenId) private pure returns (int) {
+        for (int i = 0; i < int(nftOwned.length); i++) {
+            if (nftOwned[uint(i)].tokenId == tokenId) {
                 return i;
             }
         }
         return -1;
     }
-
-    //We might add a resell token function in the future
-    //In that case, tokens won't be listed by default but users can send a request to actually list a token
-    //Currently NFTs are listed by default
 }
