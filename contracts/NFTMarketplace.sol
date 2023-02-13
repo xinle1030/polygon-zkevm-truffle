@@ -38,6 +38,8 @@ contract NFTMarketplace is ERC721URIStorage {
     //This mapping maps tokenId to token info and is helpful when retrieving details about a tokenId
     mapping(uint256 => ListedToken) private idToListedToken;
 
+    mapping (uint256 => address[]) private nftOwners;
+
     constructor() ERC721("NFTMarketplace", "NFTM") {
         owner = payable(msg.sender);
     }
@@ -97,6 +99,8 @@ contract NFTMarketplace is ERC721URIStorage {
             true
         );
 
+        nftOwners[tokenId].push(msg.sender);
+
         _transfer(msg.sender, address(this), tokenId);
         //Emit the event for successful transfer. The frontend parses this message and updates the end user
         emit TokenListedSuccess(
@@ -136,7 +140,7 @@ contract NFTMarketplace is ERC721URIStorage {
         //Important to get a count of all the NFTs that belong to the user before we can make an array for them
         for(uint i=0; i < totalItemCount; i++)
         {
-            if(idToListedToken[i+1].owner == msg.sender || idToListedToken[i+1].seller == msg.sender){
+            if(idToListedToken[i+1].owner == msg.sender || idToListedToken[i+1].seller == msg.sender || indexOf(nftOwners[i+1], msg.sender) != -1){
                 itemCount += 1;
             }
         }
@@ -144,7 +148,7 @@ contract NFTMarketplace is ERC721URIStorage {
         //Once you have the count of relevant NFTs, create an array then store all the NFTs in it
         ListedToken[] memory items = new ListedToken[](itemCount);
         for(uint i=0; i < totalItemCount; i++) {
-            if(idToListedToken[i+1].owner == msg.sender || idToListedToken[i+1].seller == msg.sender) {
+            if(idToListedToken[i+1].owner == msg.sender || idToListedToken[i+1].seller == msg.sender || indexOf(nftOwners[i+1], msg.sender) != -1) {
                 currentId = i+1;
                 ListedToken storage currentItem = idToListedToken[currentId];
                 items[currentIndex] = currentItem;
@@ -173,6 +177,17 @@ contract NFTMarketplace is ERC721URIStorage {
         payable(owner).transfer(listPrice);
         //Transfer the proceeds from the sale to the seller of the NFT
         payable(seller).transfer(msg.value);
+
+        nftOwners[tokenId].push(msg.sender);
+    }
+
+    function indexOf(address[] memory owners, address nftOwner) private pure returns (int) {
+        for (int i = 0; i < int(owners.length); i++) {
+            if (owners[uint(i)] == nftOwner) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     //We might add a resell token function in the future
