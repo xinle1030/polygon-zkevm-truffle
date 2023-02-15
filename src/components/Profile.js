@@ -16,6 +16,7 @@ export default function Profile() {
     //After adding your Hardhat network to your metamask, this code will get providers and signers
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
+    const addr = await signer.getAddress();
     const { chainId } = await provider.getNetwork();
     const MarketplaceData = MarketplaceJSON.networks[chainId];
 
@@ -63,7 +64,7 @@ export default function Profile() {
 
     updateData(items);
     updateFetched(true);
-    updateAddress(MarketplaceData.address);
+    updateAddress(addr);
     updateTotalPrice(sumPrice.toPrecision(3));
   }
 
