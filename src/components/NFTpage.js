@@ -67,20 +67,23 @@ export default function NFTPage(props) {
         signer
       );
 
-      const salePrice = ethers.utils.parseUnits(data.price, "ether");
+      // const salePrice = ethers.utils.parseUnits(data.price, "ether");
       updateMessage("Buying the NFT... Please Wait (Up to 5 mins)");
       //run the executeSale function
       console.log("haiz");
-      let transaction = await contract.executeSale(tokenId, {
-        value: salePrice,
-      });
-      await transaction.wait();
-      console.log("yo");
+      // let transaction = await contract.executeSale(tokenId, {
+      //   value: salePrice,
+      // });
+      let redeemCode = 1556604028;
+      let transaction = await contract.redeemNFT(tokenId, redeemCode);
+      const receipt = await transaction.wait();
+      console.log(receipt);
 
       alert("You successfully bought the NFT!");
       updateMessage("");
     } catch (e) {
       alert("Upload Error" + e);
+      console.log(e);
     }
   }
 
