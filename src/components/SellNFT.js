@@ -4,6 +4,8 @@ import { uploadFileToIPFS, uploadJSONToIPFS } from "../pinata";
 import MarketplaceJSON from "../truffle_abis/Marketplace.json";
 import { useLocation } from "react-router";
 
+let mintVal = [10, 20, 30];
+
 export default function SellNFT() {
   const [formParams, updateFormParams] = useState({
     name: "",
@@ -42,6 +44,7 @@ export default function SellNFT() {
       name,
       description,
       price,
+      mintVal,
       image: fileURL,
     };
 
@@ -84,17 +87,26 @@ export default function SellNFT() {
       let listingPrice = await contract.getListPrice();
       listingPrice = listingPrice.toString();
 
+
       //actually create the NFT
-      let transaction = await contract.createToken(metadataURL, price, {
+      let transaction = await contract.createToken(metadataURL, price, mintVal, {
         value: listingPrice,
       });
-      await transaction.wait();
+      const receipt = await transaction.wait();
       console.log(transaction);
+      let eventDetails = receipt.events[0].args;
+      console.log(eventDetails);
+      let redeemDetails = {};
+      for (let i in mintVal){
+        redeemDetails[mintVal[i]] = eventDetails.redeemCodes[i];
+      }
+      console.log(redeemDetails);
+      console.log(receipt.logs);
 
       alert("Successfully listed your NFT!");
       updateMessage("");
       updateFormParams({ name: "", description: "", price: "" });
-      window.location.replace("/");
+      // window.location.replace("/");
     } catch (e) {
       alert("Upload error" + e);
     }
