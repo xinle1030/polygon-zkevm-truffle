@@ -58,7 +58,7 @@ contract NFTMarketplace is ERC721URIStorage {
     mapping(uint256 => ListedToken) private idToListedToken;
 
     // redeem code to mint token
-    mapping(uint256 => MintToken) private codeToMintToken;
+    mapping(uint32 => MintToken) private codeToMintToken;
 
     //NFTOwners to NFT to NFT Redeem State
     mapping (address => mapping(uint256 => NFTRedeemState[])) public nftOwners;
@@ -115,12 +115,14 @@ contract NFTMarketplace is ERC721URIStorage {
         require(price > 0, "Make sure the price isn't negative");
 
         /* Generate Random String Coupon code */
-        MintToken[] memory mintToken = new MintToken[](mintVal.length);
         uint32[] memory redeemCodes = new uint32[](mintVal.length);
-        for(uint i = 0; i < mintToken.length; i++)
+        for(uint i = 0; i < mintVal.length; i++)
         {
             uint32 code = uint32(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, tokenId, mintVal[i])))%2000000000);
-            codeToMintToken[code] = mintToken[i];
+            codeToMintToken[code] = MintToken({
+                tokenId: tokenId,
+                mintValue: mintVal[i]
+            });
             redeemCodes[i] = code;
         }
 
@@ -232,17 +234,20 @@ contract NFTMarketplace is ERC721URIStorage {
 
     function redeemNFT(uint256 tokenId, uint32 redeemCode) public{
 
-        require(checkWalletNFT(tokenId) && codeToMintToken[redeemCode].tokenId == tokenId && !getLastRedeemState(nftOwners[msg.sender][tokenId]).hasRedeemed, "Invalid Redeem Code for NFT");
+        // require(checkWalletNFT(tokenId) && codeToMintToken[redeemCode].tokenId == tokenId && !getLastRedeemState(nftOwners[msg.sender][tokenId]).hasRedeemed, "Invalid Redeem Code for NFT");
+        // require(codeToMintToken[redeemCode].tokenId == tokenId, "1. Invalid Redeem Code for NFT");
+        // require(!(getLastRedeemState(nftOwners[msg.sender][tokenId]).hasRedeemed), "2. Invalid Redeem Code for NFT");
 
-        uint256 mintValue = codeToMintToken[redeemCode].mintValue;
+        // uint256 mintValue = codeToMintToken[redeemCode].mintValue;
+        uint256 mintValue = 0;
+
+        // rwdToken.transfer(msg.sender, mintValue);
 
         nftOwners[msg.sender][tokenId].push(NFTRedeemState({
                 issueDate: block.timestamp, 
                 mintValue: mintValue, 
                 hasRedeemed: true
         }));
-
-        rwdToken.transfer(msg.sender, mintValue);
 
         emit NFTRedeemed(msg.sender, tokenId, redeemCode, mintValue);
     }
