@@ -35,6 +35,7 @@ export default function NFTPage(props) {
 
     let item = {
       price: meta.price,
+      mintVal: meta.mintVal,
       tokenId: tokenId,
       seller: listedToken.seller,
       owner: listedToken.owner,
@@ -88,7 +89,7 @@ export default function NFTPage(props) {
   if (!dataFetched) getNFTData(tokenId);
 
   return (
-    <div style={{ "minHeight": "100vh" }}>
+    <div style={{ minHeight: "100vh" }}>
       <Navbar></Navbar>
       <div className="flex ml-20 mt-20">
         <img src={data.image} alt="" className="w-2/5" />
@@ -97,6 +98,9 @@ export default function NFTPage(props) {
           <div>Description: {data.description}</div>
           <div>
             Price: <span className="">{data.price + " ETH"}</span>
+          </div>
+          <div>
+            MintVal: <span className="">{data.mintVal}</span>
           </div>
           <div>
             Owner: <span className="text-sm">{data.owner}</span>
