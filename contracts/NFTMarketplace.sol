@@ -27,7 +27,7 @@ contract NFTMarketplace is ERC721URIStorage {
         uint redeemCode;
     }
 
-    //The structure to store info about a nft owner for a nft
+    //The structure to store info mountabout a nft owner for a nft
     struct NFTRedeemState {
         uint256 tokenId;
         bool hasRedeemed;
@@ -175,25 +175,25 @@ contract NFTMarketplace is ERC721URIStorage {
         return items;
     }
 
-    function executeSale(uint256 tokenId) public payable {
-        uint price = idToListedToken[tokenId].price;
-        address seller = idToListedToken[tokenId].seller;
-        require(msg.value == price, "Please submit the asking price in order to complete the purchase");
+    function executeSale(uint256 tokenId) public {
+        // uint price = idToListedToken[tokenId].price;
+        // address seller = idToListedToken[tokenId].seller;
+        // require(msg.value == price, "Please submit the asking price in order to complete the purchase");
 
-        //update the details of the token
-        idToListedToken[tokenId].currentlyListed = true;
-        idToListedToken[tokenId].seller = payable(msg.sender);
-        _itemsSold.increment();
+        // //update the details of the token
+        // idToListedToken[tokenId].currentlyListed = true;
+        // idToListedToken[tokenId].seller = payable(msg.sender);
+        // _itemsSold.increment();
 
-        //Actually transfer the token to the new owner
-        _transfer(address(this), msg.sender, tokenId);
-        //approve the marketplace to sell NFTs on your behalf
-        approve(address(this), tokenId);
+        // //Actually transfer the token to the new owner
+        // _transfer(address(this), msg.sender, tokenId);
+        // //approve the marketplace to sell NFTs on your behalf
+        // approve(address(this), tokenId);
 
-        //Transfer the listing fee to the marketplace creator
-        payable(owner).transfer(listPrice);
-        //Transfer the proceeds from the sale to the seller of the NFT
-        payable(seller).transfer(msg.value);
+        // //Transfer the listing fee to the marketplace creator
+        // payable(owner).transfer(listPrice);
+        // //Transfer the proceeds from the sale to the seller of the NFT
+        // payable(seller).transfer(msg.value);
 
         nftOwners[msg.sender].push(NFTRedeemState({
                 tokenId: tokenId, 
