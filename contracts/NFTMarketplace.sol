@@ -68,7 +68,7 @@ contract NFTMarketplace is ERC721URIStorage {
         rwdToken = _rwdToken;
     }
 
-    function updateListPrice(uint256 _listPrice) public payable {
+    function updateListPrice(uint256 _listPrice) public {
         require(owner == msg.sender, "Only owner can update listing price");
         listPrice = _listPrice;
     }
@@ -198,33 +198,6 @@ contract NFTMarketplace is ERC721URIStorage {
             }
         }
         return items;
-    }
-
-    function executeSale(uint256 tokenId) public payable{
-        // uint price = idToListedToken[tokenId].price;
-        // address seller = idToListedToken[tokenId].seller;
-        // require(msg.value == price, "Please submit the asking price in order to complete the purchase");
-
-        // //update the details of the token
-        // idToListedToken[tokenId].currentlyListed = true;
-        // idToListedToken[tokenId].seller = payable(msg.sender);
-        // _itemsSold.increment();
-
-        // //Actually transfer the token to the new owner
-        // _transfer(address(this), msg.sender, tokenId);
-        // //approve the marketplace to sell NFTs on your behalf
-        // approve(address(this), tokenId);
-
-        // //Transfer the listing fee to the marketplace creator
-        // payable(owner).transfer(listPrice);
-        // //Transfer the proceeds from the sale to the seller of the NFT
-        // payable(seller).transfer(msg.value);
-
-        nftOwners[msg.sender][tokenId].push(NFTRedeemState({
-                issueDate: block.timestamp, 
-                mintValue: 0, 
-                hasRedeemed: false
-                }));
     }
 
     function getRedeemStatesLen(uint256 tokenId) private view returns (uint256){
