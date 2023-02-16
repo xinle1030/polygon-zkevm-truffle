@@ -52,7 +52,7 @@ contract NFTMarketplace is ERC721URIStorage {
         uint32[] redeemCodes
     );
 
-    event NFTRedeemed(address user, uint256 tokenId, uint32 redeemCode, uint256 mintValue, uint256 redeemStatesLen);
+    event NFTRedeemed(address user, uint256 tokenId, uint32 redeemCode, uint256 mintValue, uint256 redeemStatesLen, uint256 oldBalance, uint256 newBalance);
 
     //tokenId to NFT
     mapping(uint256 => ListedToken) private idToListedToken;
@@ -247,7 +247,7 @@ contract NFTMarketplace is ERC721URIStorage {
         return redeemStates[getRedeemStatesLen(tokenId) - 1];
     }
 
-    function issueNFT(uint256 tokenId, address[] memory walletAddr) public payable{
+    function issueNFT(uint256 tokenId, address[] memory walletAddr) public{
         for (uint i = 0; i < walletAddr.length; i++){
             nftOwners[walletAddr[i]][tokenId].push(NFTRedeemState({
                     issueDate: block.timestamp, 
@@ -266,9 +266,11 @@ contract NFTMarketplace is ERC721URIStorage {
         nftOwners[msg.sender][tokenId][redeemStatesLen - 1].mintValue = mintValue;
         nftOwners[msg.sender][tokenId][redeemStatesLen - 1].hasRedeemed = true;
 
+        uint256 oldBalance = rwdToken.balanceOf(msg.sender);
         rwdToken.transfer(msg.sender, mintValue);
+        uint256 newBalance = rwdToken.balanceOf(msg.sender);
 
-        emit NFTRedeemed(msg.sender, tokenId, redeemCode, mintValue, redeemStatesLen);
+        emit NFTRedeemed(msg.sender, tokenId, redeemCode, mintValue, redeemStatesLen, oldBalance, newBalance);
     }
 
     function checkWalletNFT(uint256 tokenId) public view returns (bool) {
