@@ -29,6 +29,7 @@ export default function NFTPage(props) {
     //create an NFT Token
     const tokenURI = await contract.tokenURI(tokenId);
     const listedToken = await contract.getListedTokenForId(tokenId);
+
     let meta = await axios.get(tokenURI);
     meta = meta.data;
     console.log(listedToken);
@@ -81,7 +82,7 @@ export default function NFTPage(props) {
       const receipt1 = await transaction1.wait();
       console.log(receipt1);
       
-      let redeemCode = 1578298528;
+      let redeemCode = 1003965874;
       let transaction2 = await contract.redeemNFT(tokenId, redeemCode);
       const receipt2 = await transaction2.wait();
       console.log(receipt2);
