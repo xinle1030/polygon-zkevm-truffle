@@ -1,5 +1,6 @@
 import Navbar from "./Navbar";
 import MarketplaceJSON from "../truffle_abis/Marketplace.json";
+import RWDTokenJSON from "../truffle_abis/RWDToken.json";
 import axios from "axios";
 import { useState } from "react";
 import NFTTile from "./NFTTile";
@@ -9,6 +10,7 @@ export default function Profile() {
   const [dataFetched, updateFetched] = useState(false);
   const [address, updateAddress] = useState("0x");
   const [totalPrice, updateTotalPrice] = useState("0");
+  const [balance, updateBalance] = useState("0");
 
   async function getNFTData() {
     const ethers = require("ethers");
@@ -16,9 +18,10 @@ export default function Profile() {
     //After adding your Hardhat network to your metamask, this code will get providers and signers
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
-    const addr = await signer.getAddress();
+    const walletAddr = await signer.getAddress();
     const { chainId } = await provider.getNetwork();
     const MarketplaceData = MarketplaceJSON.networks[chainId];
+    const rwdTokenData = RWDTokenJSON.networks[chainId];
 
     //Pull the deployed contract instance
     let contract = new ethers.Contract(
@@ -27,7 +30,17 @@ export default function Profile() {
       signer
     );
 
-    //create an NFT Token
+    let rwdContract = new ethers.Contract(
+      rwdTokenData.address,
+      RWDTokenJSON.abi,
+      signer
+    );
+
+    let balance = await rwdContract.balanceOf(walletAddr);
+    console.log("Reward Token Balance: " + balance);
+    updateBalance(ethers.utils.formatUnits(balance.toString(), "ether"));
+
+    //Get an NFT Token
     let transaction = await contract.getMyNFTs();
 
     /*
@@ -64,7 +77,7 @@ export default function Profile() {
 
     updateData(items);
     updateFetched(true);
-    updateAddress(addr);
+    updateAddress(walletAddr);
     updateTotalPrice(sumPrice.toPrecision(3));
   }
 
@@ -91,7 +104,7 @@ export default function Profile() {
           </div>
           <div className="ml-20">
             <h2 className="font-bold">Total Value</h2>
-            {totalPrice} ETH
+            {balance} ETH
           </div>
         </div>
         <div className="flex flex-col text-center items-center mt-11 text-white">
