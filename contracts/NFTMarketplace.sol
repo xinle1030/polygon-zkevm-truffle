@@ -52,7 +52,7 @@ contract NFTMarketplace is ERC721URIStorage {
         uint32[] redeemCodes
     );
 
-    event NFTRedeemed(address user, uint256 tokenId, uint32 redeemCode, uint256 mintValue);
+    event NFTRedeemed(address user, uint256 tokenId, uint32 redeemCode, uint256 mintValue, uint256 redeemStatesLen);
 
     //tokenId to NFT
     mapping(uint256 => ListedToken) private idToListedToken;
@@ -182,7 +182,7 @@ contract NFTMarketplace is ERC721URIStorage {
         //Important to get a count of all the NFTs that belong to the user before we can make an array for them
         for(uint i=0; i < totalItemCount; i++)
         {
-            if(idToListedToken[i+1].owner == msg.sender || idToListedToken[i+1].seller == msg.sender || checkWalletNFT(i+1)){
+            if(idToListedToken[i+1].owner == msg.sender || idToListedToken[i+1].seller == msg.sender || (checkWalletNFT(i + 1) && getFirstOccuringRedeemState(i+1))){
                 itemCount += 1;
             }
         }
@@ -190,7 +190,7 @@ contract NFTMarketplace is ERC721URIStorage {
         //Once you have the count of relevant NFTs, create an array then store all the NFTs in it
         ListedToken[] memory items = new ListedToken[](itemCount);
         for(uint i=0; i < totalItemCount; i++) {
-            if(idToListedToken[i+1].owner == msg.sender || idToListedToken[i+1].seller == msg.sender || checkWalletNFT(i+1)) {
+            if(idToListedToken[i+1].owner == msg.sender || idToListedToken[i+1].seller == msg.sender || (checkWalletNFT(i + 1) && getFirstOccuringRedeemState(i+1))){
                 currentId = i+1;
                 ListedToken storage currentItem = idToListedToken[currentId];
                 items[currentIndex] = currentItem;
@@ -227,32 +227,51 @@ contract NFTMarketplace is ERC721URIStorage {
                 }));
     }
 
-    function getLastRedeemState(NFTRedeemState[] memory redeemStates) private pure returns (NFTRedeemState memory){
-        uint lastIndex = redeemStates.length - 1;
-        return redeemStates[lastIndex];
+    function getRedeemStatesLen(uint256 tokenId) private view returns (uint256){
+        uint256 redeemStatesLen = (nftOwners[msg.sender][tokenId]).length;
+        return redeemStatesLen;
+    }
+
+    function getFirstOccuringRedeemState(uint256 tokenId) private view returns (bool){
+        NFTRedeemState[] memory redeemStates = nftOwners[msg.sender][tokenId];
+        for (uint256 i = 0; i < redeemStates.length; i++){
+            if (redeemStates[i].hasRedeemed){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function getLastRedeemState(uint256 tokenId) private view returns (NFTRedeemState memory){
+        NFTRedeemState[] memory redeemStates = nftOwners[msg.sender][tokenId];
+        return redeemStates[getRedeemStatesLen(tokenId) - 1];
+    }
+
+    function issueNFT(uint256 tokenId, address[] memory walletAddr) public payable{
+        for (uint i = 0; i < walletAddr.length; i++){
+            nftOwners[walletAddr[i]][tokenId].push(NFTRedeemState({
+                    issueDate: block.timestamp, 
+                    mintValue: 0, 
+                    hasRedeemed: false
+                    }));
+        }
     }
 
     function redeemNFT(uint256 tokenId, uint32 redeemCode) public{
+        require(codeToMintToken[redeemCode].tokenId == tokenId, "1. Invalid Redeem Code for NFT");
+        require(checkWalletNFT(tokenId) && !((getLastRedeemState(tokenId)).hasRedeemed), "2. Invalid Redeem Code for NFT");
 
-        // require(checkWalletNFT(tokenId) && codeToMintToken[redeemCode].tokenId == tokenId && !getLastRedeemState(nftOwners[msg.sender][tokenId]).hasRedeemed, "Invalid Redeem Code for NFT");
-        // require(codeToMintToken[redeemCode].tokenId == tokenId, "1. Invalid Redeem Code for NFT");
-        // require(!(getLastRedeemState(nftOwners[msg.sender][tokenId]).hasRedeemed), "2. Invalid Redeem Code for NFT");
+        uint256 mintValue = codeToMintToken[redeemCode].mintValue;
+        uint256 redeemStatesLen = (nftOwners[msg.sender][tokenId]).length;
+        nftOwners[msg.sender][tokenId][redeemStatesLen - 1].mintValue = mintValue;
+        nftOwners[msg.sender][tokenId][redeemStatesLen - 1].hasRedeemed = true;
 
-        // uint256 mintValue = codeToMintToken[redeemCode].mintValue;
-        uint256 mintValue = 0;
+        rwdToken.transfer(msg.sender, mintValue);
 
-        // rwdToken.transfer(msg.sender, mintValue);
-
-        nftOwners[msg.sender][tokenId].push(NFTRedeemState({
-                issueDate: block.timestamp, 
-                mintValue: mintValue, 
-                hasRedeemed: true
-        }));
-
-        emit NFTRedeemed(msg.sender, tokenId, redeemCode, mintValue);
+        emit NFTRedeemed(msg.sender, tokenId, redeemCode, mintValue, redeemStatesLen);
     }
 
-      function checkWalletNFT(uint256 tokenId) public view returns (bool) {
+    function checkWalletNFT(uint256 tokenId) public view returns (bool) {
         return (nftOwners[msg.sender][tokenId]).length > 0;
     }
 }
