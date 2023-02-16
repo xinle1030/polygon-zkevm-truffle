@@ -56,6 +56,7 @@ export default function NFTPage(props) {
       //After adding your Hardhat network to your metamask, this code will get providers and signers
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
+      const connectedAddr = await signer.getAddress();
 
       const { chainId } = await provider.getNetwork();
       const MarketplaceData = MarketplaceJSON.networks[chainId];
@@ -74,10 +75,18 @@ export default function NFTPage(props) {
       // let transaction = await contract.executeSale(tokenId, {
       //   value: salePrice,
       // });
-      let redeemCode = 1556604028;
-      let transaction = await contract.redeemNFT(tokenId, redeemCode);
-      const receipt = await transaction.wait();
-      console.log(receipt);
+
+      console.log(connectedAddr);
+      let transaction1 = await contract.issueNFT(tokenId, [connectedAddr]);
+      const receipt1 = await transaction1.wait();
+      console.log(receipt1);
+      
+      let redeemCode = 1578298528;
+      let transaction2 = await contract.redeemNFT(tokenId, redeemCode);
+      const receipt2 = await transaction2.wait();
+      console.log(receipt2);
+      let eventDetails2 = receipt2.events[0].args;
+      console.log(eventDetails2);
 
       alert("You successfully bought the NFT!");
       updateMessage("");
