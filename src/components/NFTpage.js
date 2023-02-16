@@ -82,7 +82,7 @@ export default function NFTPage(props) {
       const receipt1 = await transaction1.wait();
       console.log(receipt1);
       
-      let redeemCode = 1003965874;
+      let redeemCode = 1212279584;
       let transaction2 = await contract.redeemNFT(tokenId, redeemCode);
       const receipt2 = await transaction2.wait();
       console.log(receipt2);
